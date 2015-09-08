@@ -22,3 +22,4 @@
 * third digit is the connection quality.. 0 is OK any other value means the alectrodes are not properly set or you are moving too much.
 * http://www.zibri.org/2009/09/success.html
 * Additional info: http://hackaday.com/2009/10/21/mind-control-via-serial-port/ 
+* Needs http://www.gicentre.net/utils/chart/ library
