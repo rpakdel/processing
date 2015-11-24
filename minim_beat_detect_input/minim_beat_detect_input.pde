@@ -19,7 +19,7 @@ BeatDetect beat;
 AudioInput in;
 AudioPlayer song;
 
-int numBands = 2;
+int numBands = 16;
 float[] eRadius;
 color[] colors;
 color[] beats;
@@ -27,7 +27,7 @@ float levelScale = 1;
 
 String serialPortName = "COM8";
 Serial serialPort;
-int serialPortBaudRate = 115200;
+int serialPortBaudRate = 38400;
 
 void setup()
 {
@@ -42,10 +42,11 @@ void setup()
     colors[i] = color(0, 0, 0);
   }
   
-  size(600, 400, P3D);
+  size(800, 400, P3D);
   minim = new Minim(this);
   in = minim.getLineIn(Minim.STEREO);  
   beat = new BeatDetect(in.bufferSize(), in.sampleRate());
+  beat.setSensitivity(100);  
   
   //song = minim.loadFile("marcus_kellis_theme.mp3", 1024);
   //song.play();
@@ -92,10 +93,15 @@ void draw()
     //println(band);
     if ( beat.isOnset(band) )
     {
-      beats[index] = color(255, 255, 255, 255);
       
-      float level = abs(in.mix.level()) * levelScale * 100;      
+      
+      float level = abs(in.mix.level()) * levelScale * 200;      
       //println(level);
+      
+      //if (level > 1.0)
+      //{
+        beats[index] = color(255, 255, 255, 255);
+      //}
       
       
       eRadius[index] = 120 * level;
@@ -123,6 +129,7 @@ void draw()
       }
      
       colors[index] = color(red, green, blue, 200);
+      beats[index] = color(red, green, blue, 200);
       fill(colors[index]);
     }
             
@@ -155,7 +162,7 @@ void writeValuesToSerial()
     //printLine = printLine + (int)red(c) + "," + (int)green(c) + "," + (int)blue(c) + "|";
   }
   line += ";";
-  println(count + ": " + line);
+  //println(count + ": " + line);
   //println(line.length());
   serialPort.write(line);
 
