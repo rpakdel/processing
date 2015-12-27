@@ -16,49 +16,44 @@ int b = 0;
 int a = 0;
 void draw()
 { 
-  serialPort.write('#');
-  serialPort.write(index);
+ 
   
-  print(index);
-  print(":");
-  int m = index % 4;
-  r = 0;
-  g = 0;
-  b = 0;
-  a = 0;
-  if (m == 0)
-  {
-    r = 255;  
-    print("R:");
-  }
   
-  else if (m == 1)
+  
+  boolean inc = false;
+  if (r < 256)
   {
-    g = 255;
-    print("G:");
+    r++;
+    inc = true;
   }
-  else if (m == 2)
+  else if (g < 256)
   {
-    b = 255;
-    print("B:");
+    g++;
+    inc = true;
   }
-  else if (m == 3)
+  else if (b < 256)
   {
-    a = 255;
-    print("A:");
+    b++;
+    inc = true;
   }
   
-  color c = color(r, g, b, a);
-  print(c);
-  serialWriteColor(c);
-  
-  println();
-  index++;
-  if (index >= 16)
+  if (inc)
   {
-    index = 0;
+     serialPort.write('#');
+     //print('#');
+  
+     serialPort.write(index);    
+    // print(index);
+  
+    // print(":");
+    color c = color(r, g, b, a);
+    //print(c);
+    serialWriteColor(c);
+  
+    //println();    
   }
-  delay(3000);
+  
+  //delay(3);
 }
 
 void serialWriteByte(int x)
@@ -68,24 +63,24 @@ void serialWriteByte(int x)
 
 void serialWriteColor(color c)
 {
-  print(':');
+  //print(':');
   int i0 = (c >> 24) & 0xff;
-  print(binary(i0, 8));
+  //print(binary(i0, 8));
   serialWriteByte(i0);
   
   
-  print('|');
+  //print('|');
   int i1 = (c >> 16) & 0xff;
-  print(binary(i1, 8));
+  //print(binary(i1, 8));
   serialWriteByte(i1);
   
-  print('|');
+  //print('|');
   int i2 = (c >> 8) & 0xff;
-  print(binary(i2, 8));
+  //print(binary(i2, 8));
   serialWriteByte(i2);
   
-  print('|');
+  //print('|');
   int i3 = c & 0xff;
-  println(binary(i3, 8));
+  //println(binary(i3, 8));
   serialWriteByte(i3);
 }
