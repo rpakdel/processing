@@ -27,15 +27,15 @@ float levelScale = 1.0;
 float levelIncrement = 0.1;
 float minLevel = 1.0;
 
-String serialPortName = "COM4";
+String serialPortName = "COM7";
 Serial serialPort = null;
-int serialPortBaudRate = 115200;
+int SERIAL_DATA_RATE = 115200;
 
 
 void setup()
 {
   
-  serialPort = new Serial(this, serialPortName, serialPortBaudRate);
+  serialPort = new Serial(this, serialPortName, SERIAL_DATA_RATE);
   
   eRadius = new float[numBands];
   displayColors = new color[numBands];
