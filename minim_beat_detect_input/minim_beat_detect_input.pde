@@ -21,14 +21,16 @@ AudioPlayer song;
 
 int numBands = 16;
 float[] eRadius;
-color[] colors;
-color[] beats;
-float levelScale = 1;
+color[] displayColors;
+color[] beatColors;
+float levelScale = 1.0;
 float levelIncrement = 0.1;
+float minLevel = 1.0;
 
 String serialPortName = "COM4";
 Serial serialPort = null;
 int serialPortBaudRate = 115200;
+
 
 void setup()
 {
@@ -36,12 +38,12 @@ void setup()
   serialPort = new Serial(this, serialPortName, serialPortBaudRate);
   
   eRadius = new float[numBands];
-  colors = new color[numBands];
-  beats = new color[numBands];
+  displayColors = new color[numBands];
+  beatColors = new color[numBands];
   for(int i = 0; i < numBands; ++i)
   {
     eRadius[i] = 20;
-    colors[i] = color(0, 0, 0);
+    displayColors[i] = color(0, 0, 0);
   }
   
   size(1000, 400, P3D);
@@ -58,6 +60,7 @@ void setup()
   
   ellipseMode(RADIUS);  
   stroke(255, 255, 255);
+  background(0);
 }
 
 color pixelOnColor = color(25, 25, 25, 255);
@@ -114,10 +117,11 @@ int p = 0;
 
 void draw()
 { 
-  clockPixels(1);
+  background(0);
+  //clockPixels(1);
   
   
-  //detectBeat();
+  detectBeat();
   
 }
 
@@ -128,6 +132,7 @@ void detectBeat()
      if (key == '=')
      {
        levelScale += levelIncrement;
+       print("Level scale: ");
        println(levelScale);
      }
      else if (key == '-')
@@ -137,46 +142,43 @@ void detectBeat()
        {
          levelScale = 0.0001;         
        }
+       print("Level scale: ");
        println(levelScale);
-     }     
+     }
+     else if (key == '.')
+     {
+       minLevel += levelIncrement;
+       print("Min level: ");
+       println(minLevel);
+     }
+     else if (key == ',')
+     {
+       minLevel -= levelIncrement;
+       print("Min level: ");
+       println(minLevel);
+     }
   }
   
-  background(0);
+  
   beat.detect(in.mix);
   int size = beat.detectSize();
   //println(size);
-  int w = size / numBands;
-  for (int i = 1; i <= numBands; i++)
-  {
-    int index = i - 1;
+  float w = (size * 1.0) / (numBands * 1.0);
+  
+  float level = abs(in.mix.level()) * levelScale * 100 * 2;
+  
+  for (int bandIndex = 0; bandIndex < numBands; bandIndex++)
+  {        
     
-    // if it's not a beat, draw with previous color
-    fill(colors[index]);
-    //beats[index] = color(0, 0, 0, 255);
     
-    int band = w * i - w/2;
-    //println(band);
-    if ( beat.isOnset(band) )
-    {
+    int band = (int)(w * (bandIndex + 1) - w / 2.0);    
+    if (beat.isOnset(band) && level >= minLevel)
+    {            
+      eRadius[bandIndex] = level;      
       
-      
-      float level = abs(in.mix.level()) * levelScale * 200;      
-      //println(level);
-      
-      //if (level > 1.0)
-      //{
-        beats[index] = color(255, 255, 255, 255);
-      //}
-      
-      
-      eRadius[index] = level;
-      
-      
-      int red = 0;//(int)red(colors[index]);
-      int green =  0;//(int)green(colors[index]);
-      int blue = 0;//(int)blue(colors[index]);
-      
-      
+      int red = 0;
+      int green =  0;
+      int blue = 0;
       
       if (beat.isKick())
       {
@@ -195,35 +197,60 @@ void detectBeat()
         red = green = blue = 255;
       }
            
-      colors[index] = color(red, green, blue, 200);
-      beats[index] = color(red, green, blue, 255);
-      serialWritePixel(index, beats[index]);
-      fill(colors[index]);
-      
+      displayColors[bandIndex] = color(red, green, blue, 200);      
+      beatColors[bandIndex] = color(red, green, blue, 255);      
     }
-    else
-    {
-      color cNoBeat = beats[index];
-      serialWritePixel(index, cNoBeat);
-    }
-            
-    // draw a circle
-    ellipse(width * i/(numBands + 1), height / 2.0, eRadius[index], eRadius[index]);
     
-    // reduce size of circle
-    eRadius[index] *= 0.8;
-    color c = colors[index];
-    color cBeat = beats[index];
-    colors[index] = color(red(c) * 0.7, green(c) * 0.7, blue(c) * 0.7);
-    beats[index] = color(red(cBeat) * 0.7, green(cBeat) * 0.7, blue(cBeat) * 0.7);
+    drawCircle(bandIndex, numBands, band, level, eRadius[bandIndex]);    
+    serialWritePixel(bandIndex, beatColors[bandIndex]);
+            
+    
+    
+    // reduce the values
+    eRadius[bandIndex] *= 0.8;    
+    float scaleValue = 0.8;
+    displayColors[bandIndex] = scaleColor(displayColors[bandIndex], scaleValue);
+    beatColors[bandIndex] = scaleColor(displayColors[bandIndex], scaleValue);
   }
-  
-  //writeValuesToSerial();
 }
 
-void writeValuesToSerial()
+void drawCircle(int bandIndex, int numBands, int band, float level, float radius)
 {
-  for(int index = 0; index < numBands; index++)
+  fill(displayColors[bandIndex]);
+  float x = width * (bandIndex + 1)/(numBands + 1);
+  float y = height / 2.0;
+  ellipse(x, y, radius, radius);
+  
+  fill(color(255, 255, 255, 255));
+  
+  float stry = height - 3 * 20;
+  if (bandIndex == 0)
+  {
+    text("Index", 10, stry);
+  }
+  text(str(bandIndex), x, stry);
+  stry += 20;
+  if (bandIndex == 0)
+  {
+    text("Band", 10, stry);
+  }
+  text(str(band), x, stry);
+  stry += 20;
+  if (bandIndex == 0)
+  {
+    text("Level", 10, stry);
+  }
+  text(nf(level,3,2), x, stry);
+}
+
+color scaleColor(color c, float scale)
+{  
+  return color((int)(red(c) * scale), (int)(green(c) * scale), (int)(blue(c) * scale)); 
+}
+
+void writeValuesToSerial(color[] beats)
+{
+  for(int index = 0; index <= numBands; index++)
   {
     color c = beats[index];
     serialWritePixel(index, c);
@@ -258,6 +285,13 @@ void serialWritePixel(int pixelIndex, color c)
    {
      fillSerialWritePixelBytes(pixelBytes, pixelIndex, c);
      serialPort.write(pixelBytes);     
+     
+     // band-aid fix for bug where 1 pixel doesn't turn on
+     if (pixelIndex == (numBands - 1))
+     {
+       fillSerialWritePixelBytes(pixelBytes, numBands, c);
+       serialPort.write(pixelBytes);
+     }
    }   
 }
 
